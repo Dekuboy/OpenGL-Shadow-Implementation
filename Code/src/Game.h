@@ -8,6 +8,7 @@ class RenderTexture;
 class Input;
 class Camera;
 class GameObject;
+class DepthBuffer;
 
 class Game
 {
@@ -31,6 +32,8 @@ class Game
 	std::shared_ptr<RenderTexture> m_mergeRt;
 
 	std::shared_ptr<RenderTexture> m_rippleRt;
+
+	std::shared_ptr<DepthBuffer> m_depthMap;
 
 	// Stores input values from player
 	std::shared_ptr<Input> m_keyState;

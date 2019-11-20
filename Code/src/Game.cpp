@@ -35,6 +35,9 @@ Game::Game()
 			std::make_shared<RenderTexture>(512, 512);
 		m_rippleRt = std::make_shared<RenderTexture>(512, 512);
 
+		glm::vec3 lightPosition = glm::vec3(3, 0, -20);
+		glm::vec3 lightDirection = glm::normalize(glm::vec3(1, -1, 1));
+
 		m_shinyShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
 			(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
 		m_shinyShader->setUniform("in_LightPos", glm::vec3(3, 0, -20));
@@ -43,7 +46,8 @@ Game::Game()
 			(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
 		m_environmentShader->setUniform("in_Emissive", glm::vec3(0, 0, 0));
 		m_environmentShader->setUniform("in_Ambient", glm::vec3(0.1, 0.1, 0.1));
-		m_environmentShader->setUniform("in_LightPos", glm::vec3(3, 0, -20));
+		//m_environmentShader->setUniform("in_LightPos", lightPosition);
+		m_environmentShader->setUniform("in_LightDir", lightDirection);
 
 		m_staticShader->setUniform("in_Projection", glm::ortho(0.0f,
 			(float)m_windowWidth, 0.0f, (float)m_windowHeight, -1.0f, 1.0f));
@@ -119,7 +123,7 @@ void Game::gameLoop()
 	tempModel.m_rotation = glm::vec3(0, angle, 0);
 
 	std::shared_ptr<GameObject> curuthers =
-		std::make_shared<GameObject>(texture, shape, m_shinyShader);
+		std::make_shared<GameObject>(texture, shape, m_environmentShader);
 
 	curuthers->setInitialModel(tempModel);
 
@@ -162,7 +166,7 @@ void Game::gameLoop()
 	bool quit = false;
 	while (!quit)
 	{
-		// Reset variables oer update
+		// Reset variables per update
 
 		currentTime = SDL_GetTicks();
 		deltaTime = (float)(currentTime - lastTime) / 1000.0f;
@@ -254,14 +258,6 @@ void Game::gameLoop()
 
 		// Draw the cat
 		curuthers->draw(m_rt);
-
-		// Draw cat copy with m_rt
-		glm::mat4 modelMat(1.0f);
-		modelMat = glm::translate(modelMat, glm::vec3(4.0f, -2.1f, -20.0f));
-		m_shinyShader->setUniform("in_Model", modelMat);
-		// Set texture to a render texture to create effect
-		m_shinyShader->setUniform("in_Texture", m_rt);
-		m_shinyShader->draw(m_rt, shape);
 
 		glDisable(GL_DEPTH_TEST);
 		glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
