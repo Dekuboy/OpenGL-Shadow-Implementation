@@ -35,12 +35,12 @@ Game::Game()
 			std::make_shared<RenderTexture>(512, 512);
 		m_rippleRt = std::make_shared<RenderTexture>(512, 512);
 
-		glm::vec3 lightPosition = glm::vec3(3, 0, -20);
-		glm::vec3 lightDirection = glm::normalize(glm::vec3(1, -1, 1));
+		glm::vec3 lightPosition = glm::vec3(0, 5, -2);
+		glm::vec3 lightDirection = glm::normalize(glm::vec3(0, 1, 1));
 
 		m_shinyShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
 			(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
-		m_shinyShader->setUniform("in_LightPos", glm::vec3(3, 0, -20));
+		m_shinyShader->setUniform("in_LightPos", lightPosition);
 
 		m_environmentShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
 			(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
