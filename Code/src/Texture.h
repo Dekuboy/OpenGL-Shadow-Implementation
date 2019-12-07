@@ -6,10 +6,12 @@
 #include <vector>
 
 class RenderTexture;
+class DepthBuffer;
 
 class Texture
 {
 	friend class RenderTexture;
+	friend class DepthBuffer;
 private:
 	GLuint m_id;
 	glm::vec2 m_size;

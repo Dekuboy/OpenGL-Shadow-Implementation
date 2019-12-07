@@ -14,7 +14,6 @@ class Game
 {
 	SDL_Window *m_window;
 
-	std::shared_ptr<ShaderProgram> m_shinyShader;
 	std::shared_ptr<ShaderProgram> m_environmentShader;
 
 	std::shared_ptr<ShaderProgram> m_lightkeyShader;
@@ -33,6 +32,11 @@ class Game
 
 	std::shared_ptr<RenderTexture> m_rippleRt;
 
+	std::shared_ptr<ShaderProgram> m_depthShader;
+	std::shared_ptr<ShaderProgram> m_shadowShader;
+
+	glm::vec3 m_lightPosition;
+	glm::vec3 m_lightDirection;
 	std::shared_ptr<DepthBuffer> m_depthMap;
 
 	// Stores input values from player

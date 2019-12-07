@@ -7,6 +7,7 @@ class Texture;
 class VertexArray;
 class ShaderProgram;
 class RenderTexture;
+class DepthBuffer;
 
 // Stores data for individual hitboxes of the model
 
@@ -54,6 +55,8 @@ public:
 	virtual void draw(std::shared_ptr<RenderTexture> _rt);
 	virtual void draw(std::shared_ptr<ShaderProgram> _shader);
 	virtual void draw(std::shared_ptr<RenderTexture> _rt, 
+		std::shared_ptr<ShaderProgram> _shader);
+	virtual void draw(std::shared_ptr<DepthBuffer> _db,
 		std::shared_ptr<ShaderProgram> _shader);
 
 	// Getters and setters

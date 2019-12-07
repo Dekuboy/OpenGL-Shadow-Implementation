@@ -3,6 +3,7 @@
 #include "VertexBuffer.h"
 #include "Texture.h"
 #include "RenderTexture.h"
+#include "DepthBuffer.h"
 
 #include <glm/ext.hpp>
 
@@ -270,6 +271,10 @@ void ShaderProgram::draw(std::shared_ptr<VertexArray> vertexArray)
 		{
 			glBindTexture(GL_TEXTURE_2D, m_samplers.at(i).m_texture->getId());
 		}
+		else if (m_samplers.at(i).m_depth)
+		{
+			glBindTexture(GL_TEXTURE_2D, m_samplers.at(i).m_depth->getId());
+		}
 		else
 		{
 			glBindTexture(GL_TEXTURE_2D, 0);
@@ -293,6 +298,21 @@ void ShaderProgram::draw(std::shared_ptr<RenderTexture> renderTexture, std::shar
 	glBindFramebuffer(GL_FRAMEBUFFER, renderTexture->getFbId());
 	glm::vec4 lastViewport = m_viewport;
 	m_viewport = glm::vec4(0, 0, renderTexture->getSize().x, renderTexture->getSize().y);
+	draw(vertexArray);
+	m_viewport = lastViewport;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void ShaderProgram::draw(std::shared_ptr<DepthBuffer> depthBuffer)
+{
+	draw(depthBuffer, m_simpleShape);
+}
+
+void ShaderProgram::draw(std::shared_ptr<DepthBuffer> depthBuffer, std::shared_ptr<VertexArray> vertexArray)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, depthBuffer->getFbId());
+	glm::vec4 lastViewport = m_viewport;
+	m_viewport = glm::vec4(0, 0, depthBuffer->getSize().x, depthBuffer->getSize().y);
 	draw(vertexArray);
 	m_viewport = lastViewport;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -383,6 +403,38 @@ void ShaderProgram::setUniform(std::string uniform, glm::mat4 value)
 
 	glUseProgram(m_id);
 	glUniformMatrix4fv(uniformId, 1, 0, glm::value_ptr(value));
+	glUseProgram(0);
+}
+
+void ShaderProgram::setUniform(std::string uniform, std::shared_ptr<DepthBuffer> depth)
+{
+	GLint uniformId = glGetUniformLocation(m_id, uniform.c_str());
+
+	if (uniformId == -1)
+	{
+		throw std::exception();
+	}
+
+	for (int i = 0; i < m_samplers.size(); i++)
+	{
+		if (m_samplers.at(i).m_id == uniformId)
+		{
+			m_samplers.at(i).m_depth = depth;
+
+			glUseProgram(m_id);
+			glUniform1i(uniformId, i);
+			glUseProgram(0);
+			return;
+		}
+	}
+
+	Sampler s;
+	s.m_id = uniformId;
+	s.m_depth = depth;
+	m_samplers.push_back(s);
+
+	glUseProgram(m_id);
+	glUniform1i(uniformId, m_samplers.size() - 1);
 	glUseProgram(0);
 }
 

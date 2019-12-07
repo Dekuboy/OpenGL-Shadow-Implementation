@@ -70,6 +70,16 @@ void GameObject::draw(std::shared_ptr<RenderTexture> _rt, std::shared_ptr<Shader
 	_shader->draw(_rt, m_vertexArray);
 }
 
+void GameObject::draw(std::shared_ptr<DepthBuffer> _db,
+	std::shared_ptr<ShaderProgram> _shader)
+{
+	glm::mat4 modelMat(1.0f);
+	modelMat = glm::translate(modelMat, m_model.m_position);
+	modelMat = glm::rotate(modelMat, glm::radians(m_model.m_rotation.y), glm::vec3(0, 1, 0));
+	_shader->setUniform("in_Model", modelMat);
+	_shader->draw(_db, m_vertexArray);
+}
+
 void GameObject::setModel(Model _model, int _id)
 {
 	if (_id < 0 || _id >= m_hitboxes.size())

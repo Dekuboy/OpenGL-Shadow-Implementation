@@ -5,8 +5,6 @@ Game::Game()
 {
 	if (init())
 	{
-		m_shinyShader =
-			std::make_shared<ShaderProgram>("../shaders/simple.vert", "../shaders/spec.frag");
 		m_environmentShader =
 			std::make_shared<ShaderProgram>("../shaders/simple.vert", "../shaders/phong.frag");
 
@@ -35,22 +33,39 @@ Game::Game()
 			std::make_shared<RenderTexture>(512, 512);
 		m_rippleRt = std::make_shared<RenderTexture>(512, 512);
 
-		glm::vec3 lightPosition = glm::vec3(0, 5, -2);
-		glm::vec3 lightDirection = glm::normalize(glm::vec3(0, 1, 1));
-
-		m_shinyShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
-			(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
-		m_shinyShader->setUniform("in_LightPos", lightPosition);
+		m_lightPosition = glm::vec3(0, 0, -5);
+		m_lightDirection = glm::normalize(glm::vec3(0, 1, 1));
 
 		m_environmentShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
 			(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
 		m_environmentShader->setUniform("in_Emissive", glm::vec3(0, 0, 0));
 		m_environmentShader->setUniform("in_Ambient", glm::vec3(0.1, 0.1, 0.1));
 		//m_environmentShader->setUniform("in_LightPos", lightPosition);
-		m_environmentShader->setUniform("in_LightDir", lightDirection);
+		m_environmentShader->setUniform("in_LightDir", m_lightDirection);
 
 		m_staticShader->setUniform("in_Projection", glm::ortho(0.0f,
 			(float)m_windowWidth, 0.0f, (float)m_windowHeight, -1.0f, 1.0f));
+
+		m_depthMap = std::make_shared<DepthBuffer>(1024, 1024);
+		m_depthShader = std::make_shared<ShaderProgram>("../shadows/shadow.vert", "../shadows/shadow.frag");
+		m_shadowShader = std::make_shared<ShaderProgram>("../shadows/shadowmap.vert", "../shadows/shadowmap.frag");
+
+		float near_plane = 1.0f, far_plane = 50.0f;
+		glm::mat4 lightProjection = glm::ortho(-30.0f, 30.0f, -30.0f, 30.0f, near_plane, far_plane);
+
+		glm::mat4 lightView = glm::lookAt(m_lightPosition,
+			glm::vec3(0.0f, -2.1f, -20.0f),
+			glm::vec3(0.0f, 1.0f, 0.0f));
+
+		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+
+		m_depthShader->setUniform("in_LightSpace", lightSpaceMatrix);
+
+		m_shadowShader->setUniform("in_LightSpace", lightSpaceMatrix);
+		m_shadowShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
+			(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
+		m_shadowShader->setUniform("in_Ambient", glm::vec3(0.1, 0.1, 0.1));
+		m_shadowShader->setUniform("in_LightPos", m_lightPosition);
 
 		SDL_ShowCursor(false);
 
@@ -123,7 +138,7 @@ void Game::gameLoop()
 	tempModel.m_rotation = glm::vec3(0, angle, 0);
 
 	std::shared_ptr<GameObject> curuthers =
-		std::make_shared<GameObject>(texture, shape, m_environmentShader);
+		std::make_shared<GameObject>(texture, shape, m_shadowShader);
 
 	curuthers->setInitialModel(tempModel);
 
@@ -133,7 +148,7 @@ void Game::gameLoop()
 	tempModel.m_rotation = glm::vec3(0.0f, 90.0f, 0.0f);
 
 	std::shared_ptr<GameObject> mansion =
-		std::make_shared<GameObject>(hallTexture, hallShape, m_environmentShader);
+		std::make_shared<GameObject>(hallTexture, hallShape, m_shadowShader);
 
 	mansion->setInitialModel(tempModel);
 
@@ -176,6 +191,7 @@ void Game::gameLoop()
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		m_rt->clear();
+		m_depthMap->clear();
 
 		m_keyState->update(m_windowWidth, m_windowHeight);
 
@@ -241,17 +257,21 @@ void Game::gameLoop()
 			}
 		}
 
+		// Create shadows
+		mansion->draw(m_depthMap, m_depthShader);
+		curuthers->draw(m_depthMap, m_depthShader);
+		m_shadowShader->setUniform("in_DepthMap", m_depthMap);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		// Set Camera
 		glm::mat4 camModel(1.0f);
 		camModel = glm::translate(camModel, cameraPosition);
 		camModel = glm::rotate(camModel, glm::radians(camAngle.x), glm::vec3(0, 1, 0));
 		camModel = glm::rotate(camModel, glm::radians(camAngle.y), glm::vec3(1, 0, 0));
-		m_shinyShader->setUniform("in_View", glm::inverse(camModel));
 		m_environmentShader->setUniform("in_View", glm::inverse(camModel));
 		m_staticShader->setUniform("in_View", glm::inverse(camModel));
-
-		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_2D, texture->getId());
+		m_shadowShader->setUniform("in_View", glm::inverse(camModel));
 
 		// Draw the mansion
 		mansion->draw(m_rt);
@@ -274,7 +294,7 @@ void Game::gameLoop()
 		// Draw to window
 
 		m_nullShader->setViewport(glm::vec4(0, 0, m_windowWidth, m_windowHeight));
-		m_nullShader->setUniform("in_Texture", m_rippleRt);
+		m_nullShader->setUniform("in_Texture", m_rt);
 		m_nullShader->draw();
 
 		// Draw HUD to window
