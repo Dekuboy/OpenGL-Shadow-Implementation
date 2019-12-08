@@ -33,7 +33,7 @@ Game::Game()
 			std::make_shared<RenderTexture>(512, 512);
 		m_rippleRt = std::make_shared<RenderTexture>(512, 512);
 
-		m_lightPosition = glm::vec3(0, 0, -5);
+		m_lightPosition = glm::vec3(0, 10, -10);
 		m_lightDirection = glm::normalize(glm::vec3(0, 1, 1));
 
 		m_environmentShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
@@ -50,8 +50,9 @@ Game::Game()
 		m_depthShader = std::make_shared<ShaderProgram>("../shadows/shadow.vert", "../shadows/shadow.frag");
 		m_shadowShader = std::make_shared<ShaderProgram>("../shadows/shadowmap.vert", "../shadows/shadowmap.frag");
 
-		float near_plane = 1.0f, far_plane = 50.0f;
-		glm::mat4 lightProjection = glm::ortho(-30.0f, 30.0f, -30.0f, 30.0f, near_plane, far_plane);
+		float near_plane = 1.0f, far_plane = 30.0f;
+		glm::mat4 lightProjection = glm::perspective(glm::radians(90.0f),
+			1.0f, 8.0f, 30.0f);
 
 		glm::mat4 lightView = glm::lookAt(m_lightPosition,
 			glm::vec3(0.0f, -2.1f, -20.0f),
@@ -64,7 +65,7 @@ Game::Game()
 		m_shadowShader->setUniform("in_LightSpace", lightSpaceMatrix);
 		m_shadowShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
 			(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
-		m_shadowShader->setUniform("in_Ambient", glm::vec3(0.1, 0.1, 0.1));
+		m_shadowShader->setUniform("in_Ambient", glm::vec3(0.2, 0.2, 0.2));
 		m_shadowShader->setUniform("in_LightPos", m_lightPosition);
 
 		SDL_ShowCursor(false);
@@ -119,6 +120,11 @@ void Game::gameLoop()
 	std::shared_ptr<Texture> texture =
 		std::make_shared<Texture>("../images/curuthers_diffuse.png");
 
+	std::shared_ptr<VertexArray> crateS =
+		std::make_shared<VertexArray>("../objs/Crate1.obj");
+	std::shared_ptr<Texture> crateT =
+		std::make_shared<Texture>("../images/crate_1.png");
+
 	std::shared_ptr<Texture> healthBar =
 		std::make_shared<Texture>("../images/health_bar.png");
 
@@ -151,6 +157,15 @@ void Game::gameLoop()
 		std::make_shared<GameObject>(hallTexture, hallShape, m_shadowShader);
 
 	mansion->setInitialModel(tempModel);
+
+	// LightCrate
+
+	tempModel.m_position = m_lightPosition;
+
+	std::shared_ptr<GameObject> crate =
+		std::make_shared<GameObject>(crateT, crateS, m_shadowShader);
+
+	crate->setInitialModel(tempModel);
 
 	// Set mansion hitboxes
 
@@ -258,10 +273,12 @@ void Game::gameLoop()
 		}
 
 		// Create shadows
+		//glCullFace(GL_FRONT);
 		mansion->draw(m_depthMap, m_depthShader);
 		curuthers->draw(m_depthMap, m_depthShader);
 		m_shadowShader->setUniform("in_DepthMap", m_depthMap);
 
+		//glCullFace(GL_BACK);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Set Camera
@@ -278,6 +295,9 @@ void Game::gameLoop()
 
 		// Draw the cat
 		curuthers->draw(m_rt);
+
+		// Draw LightCrate
+		crate->draw(m_rt);
 
 		glDisable(GL_DEPTH_TEST);
 		glClearColor(0.0f, 0.0f, 1.0f, 1.0f);

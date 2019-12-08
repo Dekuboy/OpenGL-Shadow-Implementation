@@ -20,21 +20,24 @@ void main()
 	vec3 lightDir = normalize(in_LightPos - ex_FragPos);
 
 	float diff = max(dot(norm, lightDir), 0.0);
-	vec3 diffuse = diff * vec3(0.5, 0.5, 0.5);
+	vec3 diffuse = diff * vec3(0.5);
 
 	vec4 viewPos = inverse(in_View) * vec4(0, 0, 0, 1);
 	vec3 viewDir = normalize(vec3(viewPos) - ex_FragPos);
 	vec3 halfDir = normalize(lightDir + viewDir);
 	float spec = pow(max(dot(viewDir, halfDir), 0.0), 1);
 
-	vec3 specular = spec * vec3(1.0);
+	vec3 specular = spec * vec3(0.5);
 
 	// check if position is in shadow
 	vec3 projCoords = ex_LightSpaceFragPos.xyz / ex_LightSpaceFragPos.w;
 	projCoords = projCoords * 0.5 + 0.5;
 	float shadowDepth = texture(in_DepthMap, projCoords.xy).r;
 	float objectDepth = projCoords.z;
-	float shadow = objectDepth > shadowDepth ? 1.0 : 0.0;
+	float bias = max(0.05 * (1.0 - dot(norm, lightDir)), 0.005); 
+	float shadow = objectDepth - bias > shadowDepth ? 1.0 : 0.0;
+	if(projCoords.z > 1.0)
+        	shadow = 0.0;
 
 	vec3 light = in_Ambient + (1.0 - shadow) * (diffuse + specular);
 	gl_FragColor = tex * vec4(light, 1);
