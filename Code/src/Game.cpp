@@ -46,9 +46,9 @@ Game::Game()
 		m_staticShader->setUniform("in_Projection", glm::ortho(0.0f,
 			(float)m_windowWidth, 0.0f, (float)m_windowHeight, -1.0f, 1.0f));
 
-		m_depthMap = std::make_shared<DepthBuffer>(1024, 1024);
+		m_depthMap = std::make_shared<DepthBuffer>(512, 512);
 		m_depthShader = std::make_shared<ShaderProgram>("../shadows/shadow.vert", "../shadows/shadow.frag");
-		m_shadowShader = std::make_shared<ShaderProgram>("../shadows/shadowmap.vert", "../shadows/shadowmap.frag");
+		m_shadowShader = std::make_shared<ShaderProgram>("../shadows/shadowmap.vert", "../shadows/spsmap.frag");
 
 		float near_plane = 1.0f, far_plane = 30.0f;
 		glm::mat4 lightProjection = glm::perspective(glm::radians(90.0f),
@@ -65,7 +65,7 @@ Game::Game()
 		m_shadowShader->setUniform("in_LightSpace", lightSpaceMatrix);
 		m_shadowShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
 			(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
-		m_shadowShader->setUniform("in_Ambient", glm::vec3(0.2, 0.2, 0.2));
+		m_shadowShader->setUniform("in_Ambient", glm::vec3(0.1, 0.1, 0.1));
 		m_shadowShader->setUniform("in_LightPos", m_lightPosition);
 
 		SDL_ShowCursor(false);
