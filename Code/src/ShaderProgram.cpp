@@ -240,6 +240,152 @@ ShaderProgram::ShaderProgram(std::string vert, std::string frag)
 	m_simpleShape->setBuffer("in_TexCoord", texCoords);
 }
 
+ShaderProgram::ShaderProgram(std::string vert, std::string frag, std::string geom)
+{
+	std::string vertShader;
+	std::string fragShader;
+	std::string geomShader;
+
+	std::ifstream file(vert);
+
+	if (!file.is_open())
+	{
+		throw std::exception();
+	}
+	else
+	{
+		while (!file.eof())
+		{
+			std::string line;
+			std::getline(file, line);
+			vertShader += line + "\n";
+		}
+	}
+	file.close();
+
+	file.open(frag);
+
+	if (!file.is_open())
+	{
+		throw std::exception();
+	}
+	else
+	{
+		while (!file.eof())
+		{
+			std::string line;
+			std::getline(file, line);
+			fragShader += line + "\n";
+		}
+	}
+	file.close();
+
+	file.open(geom);
+
+	if (!file.is_open())
+	{
+		throw std::exception();
+	}
+	else
+	{
+		while (!file.eof())
+		{
+			std::string line;
+			std::getline(file, line);
+			geomShader += line + "\n";
+		}
+	}
+	file.close();
+
+	const char *vertex = vertShader.c_str();
+	const char *fragment = fragShader.c_str();
+	const char *geometry = geomShader.c_str();
+
+	GLuint vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShaderId, 1, &vertex, NULL);
+	glCompileShader(vertexShaderId);
+	GLint success = 0;
+	glGetShaderiv(vertexShaderId, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		printShaderInfoLog(vertexShaderId);
+		printProgramInfoLog(vertexShaderId);
+		throw std::exception();
+	}
+
+	GLuint fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShaderId, 1, &fragment, NULL);
+	glCompileShader(fragmentShaderId);
+	success = 0;
+	glGetShaderiv(fragmentShaderId, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		printShaderInfoLog(fragmentShaderId);
+		printProgramInfoLog(fragmentShaderId);
+		throw std::exception();
+	}
+
+	GLuint geometryShaderId = glCreateShader(GL_GEOMETRY_SHADER);
+	glShaderSource(geometryShaderId, 1, &geometry, NULL);
+	glCompileShader(geometryShaderId);
+	success = 0;
+	glGetShaderiv(geometryShaderId, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		printShaderInfoLog(geometryShaderId);
+		printProgramInfoLog(geometryShaderId);
+		throw std::exception();
+	}
+
+	m_id = glCreateProgram();
+	glAttachShader(m_id, vertexShaderId);
+	glAttachShader(m_id, fragmentShaderId);
+	glAttachShader(m_id, geometryShaderId);
+
+	// Ensure the VAO "Position" attribute stream gets set as the first position
+	// during the link.
+	glBindAttribLocation(m_id, 0, "in_Position");
+	glBindAttribLocation(m_id, 1, "in_Color");
+	glBindAttribLocation(m_id, 2, "in_TexCoord");
+	glBindAttribLocation(m_id, 3, "in_Normal");
+
+	// Perform the link and check for failure
+	glLinkProgram(m_id);
+	glGetProgramiv(m_id, GL_LINK_STATUS, &success);
+
+	if (!success)
+	{
+		throw std::exception();
+	}
+
+	glDetachShader(m_id, vertexShaderId);
+	glDeleteShader(vertexShaderId);
+	glDetachShader(m_id, fragmentShaderId);
+	glDeleteShader(fragmentShaderId);
+	glDetachShader(m_id, geometryShaderId);
+	glDeleteShader(geometryShaderId);
+
+	std::shared_ptr<VertexBuffer> positions = std::make_shared<VertexBuffer>();
+	positions->add(glm::vec2(-1.0f, 1.0f));
+	positions->add(glm::vec2(-1.0f, -1.0f));
+	positions->add(glm::vec2(1.0f, -1.0f));
+	positions->add(glm::vec2(1.0f, -1.0f));
+	positions->add(glm::vec2(1.0f, 1.0f));
+	positions->add(glm::vec2(-1.0f, 1.0f));
+
+	std::shared_ptr<VertexBuffer> texCoords = std::make_shared<VertexBuffer>();
+	texCoords->add(glm::vec2(0.0f, 0.0f));
+	texCoords->add(glm::vec2(0.0f, -1.0f));
+	texCoords->add(glm::vec2(1.0f, -1.0f));
+	texCoords->add(glm::vec2(1.0f, -1.0f));
+	texCoords->add(glm::vec2(1.0f, 0.0f));
+	texCoords->add(glm::vec2(0.0f, 0.0f));
+
+	m_simpleShape = std::make_shared<VertexArray>();
+	m_simpleShape->setBuffer("in_Position", positions);
+	m_simpleShape->setBuffer("in_TexCoord", texCoords);
+}
+
 void ShaderProgram::draw()
 {
 	draw(m_simpleShape);
@@ -271,10 +417,6 @@ void ShaderProgram::draw(std::shared_ptr<VertexArray> vertexArray)
 		{
 			glBindTexture(GL_TEXTURE_2D, m_samplers.at(i).m_texture->getId());
 		}
-		else if (m_samplers.at(i).m_depth)
-		{
-			glBindTexture(GL_TEXTURE_2D, m_samplers.at(i).m_depth->getId());
-		}
 		else
 		{
 			glBindTexture(GL_TEXTURE_2D, 0);
@@ -298,21 +440,6 @@ void ShaderProgram::draw(std::shared_ptr<RenderTexture> renderTexture, std::shar
 	glBindFramebuffer(GL_FRAMEBUFFER, renderTexture->getFbId());
 	glm::vec4 lastViewport = m_viewport;
 	m_viewport = glm::vec4(0, 0, renderTexture->getSize().x, renderTexture->getSize().y);
-	draw(vertexArray);
-	m_viewport = lastViewport;
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void ShaderProgram::draw(std::shared_ptr<DepthBuffer> depthBuffer)
-{
-	draw(depthBuffer, m_simpleShape);
-}
-
-void ShaderProgram::draw(std::shared_ptr<DepthBuffer> depthBuffer, std::shared_ptr<VertexArray> vertexArray)
-{
-	glBindFramebuffer(GL_FRAMEBUFFER, depthBuffer->getFbId());
-	glm::vec4 lastViewport = m_viewport;
-	m_viewport = glm::vec4(0, 0, depthBuffer->getSize().x, depthBuffer->getSize().y);
 	draw(vertexArray);
 	m_viewport = lastViewport;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -366,7 +493,7 @@ void ShaderProgram::setUniform(std::string uniform, std::shared_ptr<Texture> tex
 
 	if (uniformId == -1)
 	{
-		throw std::exception();
+		return;
 	}
 
 	for (int i = 0; i < m_samplers.size(); i++)
@@ -406,6 +533,20 @@ void ShaderProgram::setUniform(std::string uniform, glm::mat4 value)
 	glUseProgram(0);
 }
 
+void ShaderProgram::setUniform(std::string uniform, std::vector<glm::mat4> matrices)
+{
+	GLint uniformId = glGetUniformLocation(m_id, uniform.c_str());
+
+	if (uniformId == -1)
+	{
+		throw std::exception();
+	}
+
+	glUseProgram(m_id);
+	glUniformMatrix4fv(uniformId, matrices.size(), 0, glm::value_ptr(matrices.at(0)));
+	glUseProgram(0);
+}
+
 void ShaderProgram::setUniform(std::string uniform, std::shared_ptr<DepthBuffer> depth)
 {
 	GLint uniformId = glGetUniformLocation(m_id, uniform.c_str());
@@ -419,7 +560,7 @@ void ShaderProgram::setUniform(std::string uniform, std::shared_ptr<DepthBuffer>
 	{
 		if (m_samplers.at(i).m_id == uniformId)
 		{
-			m_samplers.at(i).m_depth = depth;
+			m_samplers.at(i).m_texture = depth;
 
 			glUseProgram(m_id);
 			glUniform1i(uniformId, i);
@@ -430,7 +571,7 @@ void ShaderProgram::setUniform(std::string uniform, std::shared_ptr<DepthBuffer>
 
 	Sampler s;
 	s.m_id = uniformId;
-	s.m_depth = depth;
+	s.m_texture = depth;
 	m_samplers.push_back(s);
 
 	glUseProgram(m_id);

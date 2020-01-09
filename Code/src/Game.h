@@ -9,6 +9,7 @@ class Input;
 class Camera;
 class GameObject;
 class DepthBuffer;
+class DepthCube;
 
 class Game
 {
@@ -38,6 +39,7 @@ class Game
 	glm::vec3 m_lightPosition;
 	glm::vec3 m_lightDirection;
 	std::shared_ptr<DepthBuffer> m_depthMap;
+	std::shared_ptr<DepthCube> m_depthCube;
 
 	// Stores input values from player
 	std::shared_ptr<Input> m_keyState;

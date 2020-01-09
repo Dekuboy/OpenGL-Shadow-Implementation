@@ -7,5 +7,6 @@
 #include "Texture.h"
 #include "RenderTexture.h"
 #include "DepthBuffer.h"
+#include "DepthCube.h"
 #include "Input.h"
 #include "Utility.h"

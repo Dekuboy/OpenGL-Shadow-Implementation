@@ -82,10 +82,12 @@ VertexArray::VertexArray(std::string path) : m_dirty(false)
 	std::vector<glm::vec3> positions;
 	std::vector<glm::vec2> texCoords;
 	std::vector<glm::vec3> normals;
+	std::vector<glm::vec2> lightMaps;
 
 	std::shared_ptr<VertexBuffer> positionBuffer;
 	std::shared_ptr<VertexBuffer> texCoordBuffer;
 	std::shared_ptr<VertexBuffer> normalBuffer;
+	std::shared_ptr<VertexBuffer> lightMapBuffer;
 
 	while (!file.eof())
 	{
@@ -125,38 +127,45 @@ VertexArray::VertexArray(std::string path) : m_dirty(false)
 			std::vector<std::string> subsplit;
 			splitString(splitLine.at(1), '/', subsplit);
 
-			positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
-			if (texCoordBuffer) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
-			if (normalBuffer) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 1) positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
+			if (subsplit.size() >= 2) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
+			if (subsplit.size() >= 3) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 4) lightMapBuffer->add(lightMaps.at(atoi(subsplit.at(3).c_str()) - 1));
 			splitString(splitLine.at(2), '/', subsplit);
-			positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
-			if (texCoordBuffer) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
-			if (normalBuffer) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 1) positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
+			if (subsplit.size() >= 2) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
+			if (subsplit.size() >= 3) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 4) lightMapBuffer->add(lightMaps.at(atoi(subsplit.at(3).c_str()) - 1));
 			splitString(splitLine.at(3), '/', subsplit);
-			positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
-			if (texCoordBuffer) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
-			if (normalBuffer) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 1) positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
+			if (subsplit.size() >= 2) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
+			if (subsplit.size() >= 3) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 4) lightMapBuffer->add(lightMaps.at(atoi(subsplit.at(3).c_str()) - 1));
 
 			if (splitLine.size() < 5) continue;
 			splitString(splitLine.at(3), '/', subsplit);
 
-			positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
-			if (texCoordBuffer) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
-			if (normalBuffer) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 1) positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
+			if (subsplit.size() >= 2) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
+			if (subsplit.size() >= 3) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 4) lightMapBuffer->add(lightMaps.at(atoi(subsplit.at(3).c_str()) - 1));
 			splitString(splitLine.at(4), '/', subsplit);
-			positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
-			if (texCoordBuffer) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
-			if (normalBuffer) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 1) positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
+			if (subsplit.size() >= 2) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
+			if (subsplit.size() >= 3) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 4) lightMapBuffer->add(lightMaps.at(atoi(subsplit.at(3).c_str()) - 1));
 			splitString(splitLine.at(1), '/', subsplit);
-			positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
-			if (texCoordBuffer) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
-			if (normalBuffer) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 1) positionBuffer->add(positions.at(atoi(subsplit.at(0).c_str()) - 1));
+			if (subsplit.size() >= 2) texCoordBuffer->add(texCoords.at(atoi(subsplit.at(1).c_str()) - 1));
+			if (subsplit.size() >= 3) normalBuffer->add(normals.at(atoi(subsplit.at(2).c_str()) - 1));
+			if (subsplit.size() >= 4) lightMapBuffer->add(lightMaps.at(atoi(subsplit.at(3).c_str()) - 1));
 		}
 	}
 
 	setBuffer("in_Position", positionBuffer);
 	if (texCoordBuffer) setBuffer("in_TexCoord", texCoordBuffer);
 	if (normalBuffer) setBuffer("in_Normal", normalBuffer);
+	if (lightMapBuffer) setBuffer("in_LightMapCoord", lightMapBuffer);
 }
 
 VertexArray::VertexArray() : m_dirty(false)

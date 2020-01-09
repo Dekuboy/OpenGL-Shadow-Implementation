@@ -1,5 +1,6 @@
 #include "GameWrap.h"
 #include <ctime>
+#include <iostream>
 
 Game::Game()
 {
@@ -33,40 +34,78 @@ Game::Game()
 			std::make_shared<RenderTexture>(512, 512);
 		m_rippleRt = std::make_shared<RenderTexture>(512, 512);
 
-		m_lightPosition = glm::vec3(0, 10, -10);
+		m_lightPosition = glm::vec3(0, 5, -10);
 		m_lightDirection = glm::normalize(glm::vec3(0, 1, 1));
 
 		m_environmentShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
 			(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
 		m_environmentShader->setUniform("in_Emissive", glm::vec3(0, 0, 0));
 		m_environmentShader->setUniform("in_Ambient", glm::vec3(0.1, 0.1, 0.1));
-		//m_environmentShader->setUniform("in_LightPos", lightPosition);
+		//m_environmentShader->setUniform("in_LightPos", m_lightPosition);
 		m_environmentShader->setUniform("in_LightDir", m_lightDirection);
 
 		m_staticShader->setUniform("in_Projection", glm::ortho(0.0f,
 			(float)m_windowWidth, 0.0f, (float)m_windowHeight, -1.0f, 1.0f));
 
-		m_depthMap = std::make_shared<DepthBuffer>(512, 512);
-		m_depthShader = std::make_shared<ShaderProgram>("../shadows/shadow.vert", "../shadows/shadow.frag");
-		m_shadowShader = std::make_shared<ShaderProgram>("../shadows/shadowmap.vert", "../shadows/spsmap.frag");
+		//m_depthMap = std::make_shared<DepthBuffer>(1024, 1024);
 
-		float near_plane = 1.0f, far_plane = 30.0f;
-		glm::mat4 lightProjection = glm::perspective(glm::radians(90.0f),
-			1.0f, 8.0f, 30.0f);
+		//float near_plane = 1.0f, far_plane = 30.0f;
+		//glm::mat4 lightProjection = glm::perspective(glm::radians(90.0f),
+		//	1.0f, 8.0f, 30.0f);
 
-		glm::mat4 lightView = glm::lookAt(m_lightPosition,
-			glm::vec3(0.0f, -2.1f, -20.0f),
-			glm::vec3(0.0f, 1.0f, 0.0f));
+		//glm::mat4 lightView = glm::lookAt(m_lightPosition,
+		//	glm::vec3(0.0f, -2.1f, -20.0f),
+		//	glm::vec3(0.0f, 1.0f, 0.0f));
 
-		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+		//glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
-		m_depthShader->setUniform("in_LightSpace", lightSpaceMatrix);
+		//m_depthShader = std::make_shared<ShaderProgram>("../shadows/shadow.vert", "../shadows/shadow.frag");
+		//m_shadowShader = std::make_shared<ShaderProgram>("../shadows/shadowmap.vert", "../shadows/spsmap.frag");
 
-		m_shadowShader->setUniform("in_LightSpace", lightSpaceMatrix);
+		//m_depthShader->setUniform("in_LightSpace", lightSpaceMatrix);
+
+		//m_shadowShader->setUniform("in_LightSpace", lightSpaceMatrix);
+		//m_shadowShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
+		//	(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
+		//m_shadowShader->setUniform("in_Ambient", glm::vec3(0.1, 0.1, 0.1));
+		//m_shadowShader->setUniform("in_LightPos", m_lightPosition);
+
+		m_depthCube = std::make_shared<DepthCube>(1024, 1024);
+
+		float aspect = (float)1024 / (float)1024;
+		float near = 1.0f;
+		float far = 50.0f;
+		glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, near, far);
+
+		std::vector<glm::mat4> shadowTransforms;
+		shadowTransforms.push_back(shadowProj *
+			glm::lookAt(m_lightPosition, m_lightPosition + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
+		shadowTransforms.push_back(shadowProj *
+			glm::lookAt(m_lightPosition, m_lightPosition + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
+		shadowTransforms.push_back(shadowProj *
+			glm::lookAt(m_lightPosition, m_lightPosition + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
+		shadowTransforms.push_back(shadowProj *
+			glm::lookAt(m_lightPosition, m_lightPosition + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)));
+		shadowTransforms.push_back(shadowProj *
+			glm::lookAt(m_lightPosition, m_lightPosition + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)));
+		shadowTransforms.push_back(shadowProj *
+			glm::lookAt(m_lightPosition, m_lightPosition + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0)));
+
+		m_depthShader = std::make_shared<ShaderProgram>("../shadows/shadowCube.vert", 
+			"../shadows/shadowCube.frag", "../shadows/shadowCube.geom");
+		m_shadowShader = std::make_shared<ShaderProgram>("../shadows/cubeMap.vert", "../shadows/cubeMap.frag");
+
+		//for (int i = 0; i < 6; ++i)
+		//	m_depthShader->setUniform("in_LightSpace[" + std::to_string(i) + "]", shadowTransforms[i]);
+		m_depthShader->setUniform("in_LightSpace", shadowTransforms);
+		m_depthShader->setUniform("in_LightPos", m_lightPosition);
+		m_depthShader->setUniform("in_FarPlane", far);
+
 		m_shadowShader->setUniform("in_Projection", glm::perspective(glm::radians(45.0f),
 			(float)m_windowWidth / (float)m_windowHeight, 0.1f, 100.f));
 		m_shadowShader->setUniform("in_Ambient", glm::vec3(0.1, 0.1, 0.1));
 		m_shadowShader->setUniform("in_LightPos", m_lightPosition);
+		m_shadowShader->setUniform("in_FarPlane", far);
 
 		SDL_ShowCursor(false);
 
@@ -110,6 +149,7 @@ bool Game::init()
 
 void Game::gameLoop()
 {
+	std::cout << glGetString(GL_VERSION);
 	// Make base objects vaos and textures
 	std::shared_ptr<VertexArray> hallShape =
 		std::make_shared<VertexArray>("../objs/re_hall_baked.obj");
@@ -206,7 +246,7 @@ void Game::gameLoop()
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		m_rt->clear();
-		m_depthMap->clear();
+		m_depthCube->clear();
 
 		m_keyState->update(m_windowWidth, m_windowHeight);
 
@@ -274,9 +314,9 @@ void Game::gameLoop()
 
 		// Create shadows
 		//glCullFace(GL_FRONT);
-		mansion->draw(m_depthMap, m_depthShader);
-		curuthers->draw(m_depthMap, m_depthShader);
-		m_shadowShader->setUniform("in_DepthMap", m_depthMap);
+		mansion->draw(m_depthCube, m_depthShader);
+		curuthers->draw(m_depthCube, m_depthShader);
+		m_shadowShader->setUniform("in_DepthMap", m_depthCube);
 
 		//glCullFace(GL_BACK);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

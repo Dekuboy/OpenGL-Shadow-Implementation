@@ -1,22 +1,6 @@
 #include "DepthBuffer.h"
 
-DepthBuffer::DepthBuffer()
-{
-	m_size.x = 1024;
-	m_size.y = 1024;
-
-	init();
-}
-
-DepthBuffer::DepthBuffer(int width, int height)
-{
-	m_size.x = width;
-	m_size.y = height;
-
-	init();
-}
-
-void DepthBuffer::init()
+DepthBuffer::DepthBuffer(int width, int height) : RenderTexture(width, height, false)
 {
 	glGenFramebuffers(1, &m_fbo);
 
@@ -37,22 +21,6 @@ void DepthBuffer::init()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-}
-
-glm::vec2 DepthBuffer::getSize()
-{
-	return m_size;
-}
-
-GLuint DepthBuffer::getId()
-{
-	return m_id;
-}
-
-GLuint DepthBuffer::getFbId()
-{
-	return m_fbo;
 }
 
 void DepthBuffer::clear()
